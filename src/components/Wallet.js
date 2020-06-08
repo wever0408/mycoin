@@ -1,13 +1,16 @@
 import React, { Component } from "react";
 class Wallet extends Component {
     render() {
+        const { user, checkWallet } = this.props;
         return (
-            <div class="col-sm-4">
+            <div className="col-sm-4">
                 <div className="card">
-                    <span className="text-center">name</span>
+                    <span className="text-center">{user.name}</span>
 
                     <div className="card-body">
-                        <h5 className="card-title text-center">0</h5>
+                        <h5 className="card-title text-center">
+                            {checkWallet(user.name)}
+                        </h5>
                     </div>
                 </div>
             </div>

@@ -9,9 +9,12 @@ class User extends Component {
                     <img className="card-img-top" src={userlogo} alt=".." />
                     <span className="text-center">{name}</span>
                     <div className="card-body align-self-center">
-                        <a href="./" className="btn btn-primary btn-sm">
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={this.props.selectUser.bind(this, name)}
+                        >
                             View
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

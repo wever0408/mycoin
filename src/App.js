@@ -1,11 +1,9 @@
 import React, { Component } from "react";
 import "./App.css";
-import Wallet from "./components/Wallet";
-import Recipt from "./components/Recipt";
 import Blockchain from "./components/Blockchain";
-import Miner from "./components/Miner";
 import ListUsers from "./components/ListUsers";
 import crypto from "crypto-js";
+import Info from "./components/Info";
 class App extends Component {
     constructor() {
         super();
@@ -23,35 +21,48 @@ class App extends Component {
                 { name: "tam" },
             ],
             index: 0,
-            difficulty: 3,
+            difficulty: 1,
+            selectedUser: { name: "htnguyen" },
+            unconfirmBlocks: [],
         };
     }
+
     getGenesis = () => {
-        return {
-            index: 0,
-            previousHash: "0",
-            timestamp: 1508270000000,
-            data: "GENESIS BLOCK",
-            hash:
-                "000dc75a315c77a1f9c98fb6247d03dd18ac52632d7dc6a9920261d8109b37cf",
-            nonce: 2020,
-        };
+        const geBlock = this.newBlock(
+            0,
+            "0",
+            1508270000000,
+            "GENESIS BLOCK",
+            "000dc75a315c77a1f9c98fb6247d03dd18ac52632d7dc6a9920261d8109b37cf",
+            2020,
+            1
+        );
+        return geBlock;
     };
+
+    confirmBlock = () => {
+        const topUnconfirmIndex = this.state.unconfirmBlocks[0].index;
+        const array = this.state.blockchain;
+        array[topUnconfirmIndex] = { ...array[topUnconfirmIndex], status: 1 };
+        const temp = this.state.unconfirmBlocks;
+        temp.splice(0, 1);
+        this.setState({
+            blockchain: array,
+            unconfirmBlocks: temp,
+        });
+    };
+
     getLatestBlock = () => {
         return this.state.blockchain[this.state.blockchain.length - 1];
     };
     hash(index, previousHash, timestamp, data, nonce) {
-        // return crypto
-        //     .createHash("sha256")
-        //     .update(index + previousHash + timestamp + data + nonce)
-        //     .digest("hex");
         return (
             crypto
-                .SHA256(previousHash + timestamp + JSON.stringify(data))
+                .SHA256(index + previousHash + timestamp + JSON.stringify(data))
                 .toString() + nonce.toString()
         );
     }
-    newBlock = (index, previousHash, timestamp, data, hash, nonce) => {
+    newBlock = (index, previousHash, timestamp, data, hash, nonce, status) => {
         const Block = {
             index,
             previousHash,
@@ -59,35 +70,83 @@ class App extends Component {
             data,
             hash,
             nonce,
+            status,
         };
         return Block;
     };
-    gerenateBlock = () => {
+    isValidHashDifficulty = (hash) => {
+        for (var i = 0; i < hash.length; i++) {
+            if (hash[i] !== "0") {
+                break;
+            }
+        }
+        return i >= this.state.difficulty;
+    };
+    gerenateBlock = (userFrom, userTo, amount, fund, status) => {
+        let nonce = 0;
+        const data = {
+            userFrom,
+            userTo,
+            amount,
+            fund,
+        };
+
         const previousBlock = this.getLatestBlock();
         const nextIndex = previousBlock.index + 1;
-        const nextTimestamp = new Date().getTime() / 1000;
-        const nextHash = this.hash(
+        let nextTimestamp = new Date().getTime();
+        let nextHash = this.hash(
             nextIndex,
             previousBlock.hash,
             nextTimestamp,
-            "data",
-            987
+            data,
+            nonce
         );
+
+        while (!this.isValidHashDifficulty(nextHash)) {
+            nonce = nonce + 1;
+            nextTimestamp = new Date().getTime();
+            nextHash = this.hash(
+                nextIndex,
+                previousBlock.hash,
+                nextTimestamp,
+                data,
+                nonce
+            );
+        }
+
         const newBlock = this.newBlock(
             nextIndex,
             previousBlock.hash,
             nextTimestamp,
-            "data",
+            data,
             nextHash,
-            987
+            nonce,
+            status
         );
         const listblocks = [...this.state.blockchain, newBlock];
+        const unconfirmBlocks = [...this.state.unconfirmBlocks, newBlock];
         this.setState({
             blockchain: listblocks,
+            unconfirmBlocks: unconfirmBlocks,
         });
+    };
+    checkWallet = (name) => {
+        let amount = 0;
+        for (const block of this.state.blockchain) {
+            if (block.status == 1) {
+                if (block.data.userTo == name) {
+                    amount = amount + +block.data.amount;
+                }
+                if (block.data.userFrom == name) {
+                    amount = amount - +block.data.amount;
+                }
+            }
+        }
+        return amount;
     };
     addUser = () => {
         if (this.state.index <= 7) {
+            const newName = this.state.dicU[this.state.index].name;
             const listusers = [
                 ...this.state.listusers,
                 this.state.dicU[this.state.index],
@@ -99,7 +158,14 @@ class App extends Component {
             });
         }
     };
-
+    selectUser = (name) => {
+        this.setState({
+            selectedUser: { name },
+        });
+    };
+    inital = () => {
+        this.gerenateBlock("admin", "htnguyen", 25, 0, 0);
+    };
     render() {
         return (
             <div>
@@ -112,23 +178,32 @@ class App extends Component {
                             Add Wallet
                         </button>
                         <button
-                            className="btn btn-primary ml-4"
-                            onClick={this.gerenateBlock}
+                            className="btn btn-dark btn-sm ml-4"
+                            onClick={this.inital}
                         >
-                            Add Block
+                            Try intital data
                         </button>
                     </div>
                     <hr />
-                    <ListUsers entries={this.state.listusers} />
+                    <ListUsers
+                        entries={this.state.listusers}
+                        selectUser={this.selectUser}
+                    />
                     <hr />
-                    <div className="row">
-                        <Wallet />
-                        <Recipt />
-                        <Miner />
-                    </div>
+                    <Info
+                        user={this.state.selectedUser}
+                        listusers={this.state.listusers}
+                        gerenateBlock={this.gerenateBlock}
+                        hasUnconfrim={this.state.unconfirmBlocks.length !== 0}
+                        confirmBlock={this.confirmBlock}
+                        checkWallet={this.checkWallet}
+                    />
                 </div>
                 <hr />
-                <Blockchain blockchain={this.state.blockchain} />
+                <Blockchain
+                    blockchain={this.state.blockchain}
+                    unconfirmBlocks={this.state.unconfirmBlocks}
+                />
             </div>
         );
     }

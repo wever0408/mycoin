@@ -1,21 +1,28 @@
 import React, { Component } from "react";
 class Miner extends Component {
     render() {
+        const { hasUnconfrim, confirmBlock } = this.props;
+
         return (
-            <div class="col-sm-4 ">
+            <div className="col-sm-4 ">
                 <div className="card">
                     <span className="text-center">Mining</span>
-
+                    {hasUnconfrim ? (
+                        <span className="badge badge-warning text-center">
+                            Has unconfirmed block
+                        </span>
+                    ) : (
+                        ""
+                    )}
                     <div className="card-body d-flex justify-content-center">
-                        <a
+                        <button
                             name=""
                             id=""
                             className="btn btn-primary"
-                            href="./"
-                            role="button"
+                            onClick={confirmBlock}
                         >
                             Mine
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
