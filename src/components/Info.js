@@ -11,19 +11,28 @@ class Info extends Component {
             hasUnconfrim,
             confirmBlock,
             checkWallet,
+            newUnconfirmblock,
+            miner,
+            checkHistoty,
         } = this.props;
         return (
             <div className="row">
-                <Wallet user={user} checkWallet={checkWallet} />
+                 <Miner
+                    user={user}
+                    hasUnconfrim={hasUnconfrim}
+                    confirmBlock={confirmBlock}
+                    miner={miner}
+                />
+                <Wallet
+                    user={user}
+                    checkWallet={checkWallet}
+                    checkHistoty={checkHistoty}
+                />
                 <Recipt
                     user={user}
                     listusers={listusers}
                     gerenateBlock={gerenateBlock}
-                />
-                <Miner
-                    user={user}
-                    hasUnconfrim={hasUnconfrim}
-                    confirmBlock={confirmBlock}
+                    newUnconfirmblock={newUnconfirmblock}
                 />
             </div>
         );

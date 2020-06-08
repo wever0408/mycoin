@@ -22,8 +22,15 @@ class App extends Component {
             ],
             index: 0,
             difficulty: 1,
-            selectedUser: { name: "htnguyen" },
+            selectedUser: { name: "xtam" },
             unconfirmBlocks: [],
+            reward: 1,
+            miner: "",
+            forMiner: {
+                name: "",
+                reward: 0,
+                fund: 0,
+            },
         };
     }
 
@@ -39,28 +46,55 @@ class App extends Component {
         );
         return geBlock;
     };
-
-    confirmBlock = () => {
-        const topUnconfirmIndex = this.state.unconfirmBlocks[0].index;
-        const array = this.state.blockchain;
-        array[topUnconfirmIndex] = { ...array[topUnconfirmIndex], status: 1 };
-        const temp = this.state.unconfirmBlocks;
-        temp.splice(0, 1);
+    giveReward = (fund) => {
         this.setState({
-            blockchain: array,
-            unconfirmBlocks: temp,
+            miner: this.state.selectedUser.name,
         });
+        this.gerenateBlock(
+            "admin",
+            this.state.selectedUser.name,
+            +fund + +this.state.reward,
+            0,
+            1
+        );
+    };
+    confirmBlock = () => {
+        if (this.state.unconfirmBlocks.length !== 0) {
+            const topdata = this.state.unconfirmBlocks[0];
+            this.gerenateBlock(
+                topdata.userFrom,
+                topdata.userTo,
+                topdata.amount,
+                topdata.fund,
+                1
+            );
+            const temp = this.state.unconfirmBlocks;
+            temp.splice(0, 1);
+            this.setState(
+                {
+                    unconfirmBlocks: temp,
+                    miner: this.state.selectedUser.name,
+                },
+                () => {
+                    this.giveReward(topdata.fund);
+                }
+            );
+        } else alert("No block to confrim");
     };
 
     getLatestBlock = () => {
         return this.state.blockchain[this.state.blockchain.length - 1];
     };
     hash(index, previousHash, timestamp, data, nonce) {
-        return (
-            crypto
-                .SHA256(index + previousHash + timestamp + JSON.stringify(data))
-                .toString() + nonce.toString()
-        );
+        return crypto
+            .SHA256(
+                index +
+                    previousHash +
+                    timestamp +
+                    JSON.stringify(data) +
+                    nonce.toString()
+            )
+            .toString();
     }
     newBlock = (index, previousHash, timestamp, data, hash, nonce, status) => {
         const Block = {
@@ -74,6 +108,18 @@ class App extends Component {
         };
         return Block;
     };
+    newUnconfirmblock = (userFrom, userTo, amount, fund) => {
+        const data = {
+            userFrom,
+            userTo,
+            amount,
+            fund,
+        };
+        const temp = [...this.state.unconfirmBlocks, data];
+        this.setState({
+            unconfirmBlocks: temp,
+        });
+    };
     isValidHashDifficulty = (hash) => {
         for (var i = 0; i < hash.length; i++) {
             if (hash[i] !== "0") {
@@ -82,14 +128,18 @@ class App extends Component {
         }
         return i >= this.state.difficulty;
     };
-    gerenateBlock = (userFrom, userTo, amount, fund, status) => {
-        let nonce = 0;
+    newdata = (userFrom, userTo, amount, fund) => {
         const data = {
             userFrom,
             userTo,
             amount,
             fund,
         };
+        return data;
+    };
+    gerenateBlock = (userFrom, userTo, amount, fund, status) => {
+        let nonce = 0;
+        const data = this.newdata(userFrom, userTo, amount, fund);
 
         const previousBlock = this.getLatestBlock();
         const nextIndex = previousBlock.index + 1;
@@ -124,29 +174,43 @@ class App extends Component {
             status
         );
         const listblocks = [...this.state.blockchain, newBlock];
-        const unconfirmBlocks = [...this.state.unconfirmBlocks, newBlock];
         this.setState({
             blockchain: listblocks,
-            unconfirmBlocks: unconfirmBlocks,
         });
     };
+
     checkWallet = (name) => {
         let amount = 0;
         for (const block of this.state.blockchain) {
-            if (block.status == 1) {
-                if (block.data.userTo == name) {
+            if (block.status === 1) {
+                if (block.data.userTo === name) {
                     amount = amount + +block.data.amount;
                 }
-                if (block.data.userFrom == name) {
+                if (block.data.userFrom === name) {
                     amount = amount - +block.data.amount;
+                    amount = amount - +block.data.fund;
                 }
             }
         }
         return amount;
     };
+    checkHistoty = (name) => {
+        let history = [];
+        for (const block of this.state.blockchain) {
+            if (block.status === 1) {
+                if (
+                    block.data.userTo === name ||
+                    block.data.userFrom === name
+                ) {
+                    const tx = block;
+                    history.push(tx);
+                }
+            }
+        }
+        return history;
+    };
     addUser = () => {
         if (this.state.index <= 7) {
-            const newName = this.state.dicU[this.state.index].name;
             const listusers = [
                 ...this.state.listusers,
                 this.state.dicU[this.state.index],
@@ -164,7 +228,7 @@ class App extends Component {
         });
     };
     inital = () => {
-        this.gerenateBlock("admin", "htnguyen", 25, 0, 0);
+        this.gerenateBlock("admin", "xtam", 25, 0, 1);
     };
     render() {
         return (
@@ -181,7 +245,7 @@ class App extends Component {
                             className="btn btn-dark btn-sm ml-4"
                             onClick={this.inital}
                         >
-                            Try intital data
+                            Mock data
                         </button>
                     </div>
                     <hr />
@@ -197,6 +261,10 @@ class App extends Component {
                         hasUnconfrim={this.state.unconfirmBlocks.length !== 0}
                         confirmBlock={this.confirmBlock}
                         checkWallet={this.checkWallet}
+                        newUnconfirmblock={this.newUnconfirmblock}
+                        giveReward={this.giveReward}
+                        miner={this.state.miner}
+                        checkHistoty={this.checkHistoty}
                     />
                 </div>
                 <hr />

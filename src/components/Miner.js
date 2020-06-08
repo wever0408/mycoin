@@ -1,12 +1,27 @@
 import React, { Component } from "react";
 class Miner extends Component {
     render() {
-        const { hasUnconfrim, confirmBlock } = this.props;
-
+        const { hasUnconfrim, confirmBlock, user, miner } = this.props;
         return (
             <div className="col-sm-4 ">
                 <div className="card">
-                    <span className="text-center">Mining</span>
+                    <span className="text-center">
+                        <strong>Mining</strong>
+                    </span>
+                    {/* {miner === user.name ? (
+                        <div className="alert alert-warning alert-dismissible fade show">
+                            Successful mining!
+                            <button
+                                className="close"
+                                data-dismiss="alert"
+                                aria-label="Close"
+                            >
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                    ) : (
+                        ""
+                    )} */}
                     {hasUnconfrim ? (
                         <span className="badge badge-warning text-center">
                             Has unconfirmed block
@@ -19,7 +34,9 @@ class Miner extends Component {
                             name=""
                             id=""
                             className="btn btn-primary"
-                            onClick={confirmBlock}
+                            onClick={() => {
+                                confirmBlock();
+                            }}
                         >
                             Mine
                         </button>
